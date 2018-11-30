@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cardiolipin synthase</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+    <!-- Copyright (c) 2017  Egon Willighagen <egon.willighagen@maastrichtuniversity.nl>
+         MIT license
+    -->
+
+    <!-- ops.js -->
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/purl.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/d3.v3.min.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/src/combined.js"></script>
+    <link rel="stylesheet" href="Proj1CSS.css"/>
+</head>
+
+<body>
+
+<h2>Diseases related to target: Cardiolipin synthase</h2>
+<h3>Disease: name ➜ disease URI ➜ gene URI ➜ protein URI  </h3>
+<ul id="list1"></ul>
+<h3>Further info about diseases listed above ➜ </h3>
+<h4>Disease name ➜ gene related (URI) </h4>
+<ul id="list2"></ul>
+
+
+<h4>JSON</h4>
+<div id="json">Pending...</div>
+
+
+<!-- dynamically create a table with type information -->
+<script type="text/javascript">
+    var diseaseService = new DiseaseSearch(  //DiseaseSearch comes from ops.js library (OpenPhacts Library)
+        "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
+    );
+    var pathwayService = new PathwaySearch( //PathwaySearch comes from ops.js library (OpenPhacts Library)
+        "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
+    );
+    var targetService = new TargetSearch("https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f");
+
+
+
+    var handleTargets = function(success, status, targetData) { //pathwayData :: handlePathways related to these links (request call back)--> http://openphacts.github.io/ops.js/PathwaySearch.html  &&    http://openphacts.github.io/ops.js/global.html#requestCallback
+
+        if (success && status == 200 || status == 500) {
+            d3.select("#json").html("<pre>" + JSON.stringify(targetData, undefined, 2) + "</pre>");
+
+            var itemCount = targetData.items.length;
+            var genes = [];
+
+            for (var i = 0; i < itemCount; i++) {
+                item = targetData.items[i];
+                if (item.disease && item.gene._about) {
+                    genes.push(item.gene._about);
+                }
+            }
+            var uniqueGenes = Array.from(new Set(genes));
+            console.log(uniqueGenes);
+
+
+            for (var j = 0; j < uniqueGenes.length; j++) {
+                var node2 = document.createElement("third");
+                var linebreak2 = document.createElement("br");
+                var textnode2 = document.createTextNode(item.disease.name + "➜" + uniqueGenes[j]);
+                node2.appendChild(textnode2);
+                node2.appendChild(linebreak2);
+                document.getElementById("list2").appendChild(node2);
+            }
+
+        }
+    }
+
+
+
+        var handleAssociations = function (success, status, associationData) {
+            /*d3.select("#json").html("<pre>" + JSON.stringify(associationData, undefined, 2) + "</pre>");*/
+            var itemCount = associationData.items.length;
+
+            for (var i = 0; i < itemCount; i++) {
+                item = associationData.items[i]
+                if (item._about && item.name && item.forGene._about) {
+                    var node = document.createElement("first");
+                    var linebreak = document.createElement("br");
+                    var textnode = document.createTextNode(item.name + "  ➜  " + item._about + "  ➜  " + item.forGene._about
+                        + "  ➜  " + item.forGene.encodes._about);
+                    node.appendChild(textnode);
+                    node.appendChild(linebreak);
+                    document.getElementById("list1").appendChild(node);
+
+                    diseaseService.associationsByDisease(item._about, null, "all", null, null, handleTargets);
+                }
+            }
+        };
+
+
+        var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
+
+
+       // diseaseService.diseasesByTarget( //changed from original
+           // URI, null, "all", null, null, handleAssociations)
+
+    diseaseService.associationsByDisease("http://linkedlifedata.com/resource/umls/id/C0014805 ", 1, "all", null, null, handleTargets);
+
+
+
+
+
+</script>
+</body>
+</html>
