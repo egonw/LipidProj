@@ -46,7 +46,7 @@
     <script type="text/javascript" src="https://egonw.github.io/pils/lib/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="https://egonw.github.io/pils/lib/d3.v3.min.js"></script>
     <script type="text/javascript" src="https://egonw.github.io/pils/src/combined.js"></script>
-  <!--  <link rel="stylesheet" href="Proj1CSS.css"/>  -->
+    <!--  <link rel="stylesheet" href="Proj1CSS.css"/>  -->
 </head>
 
 <body>
@@ -68,7 +68,7 @@
 <script type="text/javascript">
 
     links = [
-        {source: "CardioLipin", target: "testPathway", value: 1},
+      /*  {source: "CardioLipin", target: "testPathway", value: 1},
         {source: "CardioLipin", target: "testPathway2", value: 1},
         {source: "testPathway", target: "Alzheimer", value: 2},
         {source: "testPathway", target: "Hunting", value: 2},
@@ -77,7 +77,7 @@
         {source: "testPathway2", target: "testDisease", value: 2},
         {source: "testPathway2", target: "testDisease3", value: 2},
         {source: "testDisease", target: "testDrug", value: 3},
-        {source: "Alzheimer", target: "testDrug2", value: 3},
+        {source: "Alzheimer", target: "testDrug2", value: 3}, */
         {source: "ERYTHERMALGIA, PRIMARY", target: "testDrug", value: 3}
     ];
 
@@ -111,18 +111,13 @@
                     var textnode2 = document.createTextNode(item.disease.name + "➜" + item.gene._about);
                     node2.appendChild(textnode2);
                     node2.appendChild(linebreak2);
+
                     document.getElementById("list2").appendChild(node2);
-                } /*else{
-                        var node3 = document.createElement("hooi");
-                    var textnode3 = document.createTextNode("nothing found here" );
-                        var linebreak3 = document.createElement("br");
-                        node3.appendChild(textnode3);
-                        node3.appendChild(linebreak3);
-                        document.getElementById("list2").appendChild(node3);
-                    }*/
+                }
             }
         }
     };
+
 
 
     var handleAssociations = function(success, status, associationData) {
@@ -139,23 +134,16 @@
                 node.appendChild (textnode);
                 node.appendChild(linebreak);
 
-            //    console.log(item.name);
-                link = new linkObj(item.name,item._about,3);
-
-             //   console.log(JSON.stringify(link));
-
+                //    console.log(item.name);
+                link = new linkObj(item.name,item._about,1);
+                link2 = new linkObj(item._about,item.forGene._about,2);
+                link3 = new linkObj(item.forGene._about,item.forGene.encodes._about,3);
 
                 links.push(link);
-
-             //   console.log(JSON.stringify(links));
+                links.push(link2);
+                links.push(link3);
 
                 document.getElementById("list1").appendChild(node);
-
-           /*     console.log(item.name);
-                test = new linkObj(item.name,"test Ting",1);
-
-                links.push(test);
-            */
 
                 diseaseService.associationsByDisease(item._about, null, "all", null, null, handleTargets);
             }
@@ -163,54 +151,13 @@
         makeGraph(links);
     };
 
-
     var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
 
-
     diseaseService.diseasesByTarget(URI, null, "all", null, null, handleAssociations);
-    //diseaseService.associationsByDisease(" http://linkedlifedata.com/resource/umls/id/C1458155", 1, "all", null, null, handleTargets);
-
-
-    /*var handleFetch = function (success, status, tagData){
-        //var itemCount = associationData.items.length;
-        d3.select("#json").html("<pre>" + JSON.stringify(tagData, undefined, 2) + "</pre>");
-
-            if(tagData._about && tagData.primaryTopic._about){
-                var node = document.createElement("first");
-                var linebreak = document.createElement("br");
-                var textnode = document.createTextNode( "  ➜  "  + tagData.primaryTopic.exactMatch);
-                node.appendChild (textnode);
-                node.appendChild(linebreak);
-                document.getElementById("list1").appendChild(node);
-
-            }
-
-    }*/
-    //targetService.fetchTarget(URI, null, handleFetch)
-
-    /*{
-
-        var myData = document.getElementById("list1");
-        itemCount = myData.length;
-
-        for(var i=0;i<itemCount;i++)
-        {
-            links = {source: sourceURI, target: targetURI, value: 1}
-
-        }//if target is lipid value = 1, if target is gene value = 2, if target is drug value = 3
-        console.log(myData)
-
-    }*/
-
 
     var makeGraph = function(links) {
 
-     //   link1 = new linkObj("TestLipid17", "Alzheimer4", 1);
-
-     //   links.push(link1);
-
         var nodes = {};
-
         var width = 960,
             height = 500;
 
@@ -227,7 +174,7 @@
             .linkDistance(60)
             .charge(-300)
             .on("tick", tick)
-           .start();
+            .start();
 
         var svg = d3.select(".chart").append("svg")
         // var svg = d3.select("body").append("svg")
@@ -290,12 +237,7 @@
         function transform(d) {
             return "translate(" + d.x + "," + d.y + ")";
         }
-
-        console.log(JSON.stringify(links));
-
     }
-
-
 </script>
 </body>
 </html>
