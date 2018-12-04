@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<head>
+    <title>Cardiolipin synthase</title>
+    <meta http-equiv="Content-Type" content=text/html; charset="UTF-8">
+
+    <style>
+
+        .link {
+            fill: none;
+            stroke: #666;
+            stroke-width: 1.5px;
+        }
+
+        #licensing {
+            fill: green;
+        }
+
+        .link.licensing {
+            stroke: #ff2327;
+        }
+
+        .link.resolved {
+            stroke-dasharray: 0,2,1;
+        }
+
+        circle {
+            fill: #ccc;
+            stroke: #333;
+            stroke-width: 1.5px;
+        }
+
+        text {
+            font: 10px sans-serif;
+            pointer-events: none;
+            text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+        }
+
+    </style>
+
+    <!-- Copyright (c) 2017  Egon Willighagen <egon.willighagen@maastrichtuniversity.nl>
+         MIT license
+    -->
+
+    <!-- ops.js -->
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/purl.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/lib/d3.v3.min.js"></script>
+    <script type="text/javascript" src="https://egonw.github.io/pils/src/combined.js"></script>
+    <!--  <link rel="stylesheet" href="Proj1CSS.css"/>  -->
+</head>
+
+<body>
+
+<div class="chart"></div>
+<h2>Diseases related to target: Cardiolipin synthase</h2>
+<h3>Disease: name ➜ disease URI ➜ gene URI ➜ protein URI  </h3>
+<ul id="list1"></ul>
+<h3>Further info about diseases listed above ➜ </h3>
+<h4>Disease name ➜ gene related (URI) </h4>
+<ul id="list2"></ul>
+
+
+<h4>JSON</h4>
+<div id="json">Pending...</div>
+
+
+<!-- dynamically create a table with type information -->
+<script type="text/javascript">
+
+    links = [];
+
+
+    function linkObj (source,target,value) {
+        this.source = source;
+        this.target = target;
+        this.value = value;
+    }
+
+    var diseaseService = new DiseaseSearch(  //DiseaseSearch comes from ops.js library (OpenPhacts Library)
+        "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
+    );
+    var pathwayService = new PathwaySearch( //PathwaySearch comes from ops.js library (OpenPhacts Library)
+        "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
+    );
+    var targetService = new TargetSearch("https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f");
+
+    var handleTargets = function(success, status, targetData) { //pathwayData :: handlePathways related to these links (request call back)--> http://openphacts.github.io/ops.js/PathwaySearch.html  &&    http://openphacts.github.io/ops.js/global.html#requestCallback
+
+        if (success && status == 200 || status == 500) {
+            d3.select("#json").html("<pre>" + JSON.stringify(targetData, undefined, 2) + "</pre>");
+
+            var itemCount = targetData.items.length;
+            var genes = [];
+            var disease =[];
+
+            for (var i = 0; i < itemCount; i++) {
+                item = targetData.items[i];
+                if (item.disease && item.gene._about) {
+                    genes.push(item.gene._about);
+                    disease.push(item.disease.name);
+                }
+            }
+            var uniqueGenes = Array.from(new Set(genes));
+            console.log(uniqueGenes);
+            var uniqueName = Array.from(new Set(disease));
+            console.log(uniqueName);
+
+
+            for (var j = 0; j < uniqueGenes.length; j++) {
+                var node2 = document.createElement("third");
+                var linebreak2 = document.createElement("br");
+                var textnode2 = document.createTextNode(uniqueName[0] + "➜" + uniqueGenes[j]);
+                node2.appendChild(textnode2);
+                node2.appendChild(linebreak2);
+                document.getElementById("list2").appendChild(node2);
+            }
+        }
+    }
+
+
+
+    var handleAssociations = function(success, status, associationData) {
+        /*d3.select("#json").html("<pre>" + JSON.stringify(associationData, undefined, 2) + "</pre>");*/
+        var itemCount = associationData.items.length;
+
+        for (var i = 0; i < itemCount; i++){
+            item = associationData.items[i]
+            if(item._about && item.name && item.forGene._about){
+                var node = document.createElement("first");
+                var linebreak = document.createElement("br");
+                var textnode = document.createTextNode(item.name + "  ➜  "  + item._about + "  ➜  " + item.forGene._about
+                    + "  ➜  " + item.forGene.encodes._about);
+                node.appendChild (textnode);
+                node.appendChild(linebreak);
+
+                //    console.log(item.name);
+                link = new linkObj(item.name,item.forGene.encodes.exactMatch.prefLabel,1);
+                //link2 = new linkObj(item._about,item.forGene._about,2);
+               // link3 = new linkObj(item.forGene._about,item.forGene.encodes.exactMatch.prefLabel,3);
+
+                links.push(link);
+               // links.push(link2);
+                //links.push(link3);
+
+                document.getElementById("list1").appendChild(node);
+
+                diseaseService.associationsByDisease(item._about, null, "all", null, null, handleTargets);
+            }
+        }
+        makeGraph(links);
+    };
+
+
+
+    var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
+
+    diseaseService.diseasesByTarget(URI, null, "all", null, null, handleAssociations);
+
+    var makeGraph = function(links) {
+
+        var nodes = {};
+        var width = 960,
+            height = 500;
+
+        // Compute the distinct nodes from the links.
+        links.forEach(function (link) {
+            link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
+            link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
+        });
+
+        var force = d3.layout.force()
+            .nodes(d3.values(nodes))
+            .links(links)
+            .size([width, height])
+            .linkDistance(60)
+            .charge(-300)
+            .on("tick", tick)
+            .start();
+
+        var svg = d3.select(".chart").append("svg")
+        // var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        svg.append("defs").selectAll("marker")
+            .data(["1", "2", "3"])
+            .enter().append("marker")
+            .attr("id", function (d) {
+                return d;
+            })
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", -1.5)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5");
+
+        var path = svg.append("g").selectAll("path")
+            .data(force.links())
+            .enter().append("path")
+            .attr("class", function (d) {
+                return "link " + d.value;
+            })
+            .attr("marker-end", function (d) {
+                return "url(#" + d.value + ")";
+            });
+
+        var circle = svg.append("g").selectAll("circle")
+            .data(force.nodes())
+            .enter().append("circle")
+            .attr("r", 6)
+            .call(force.drag);
+
+        var text = svg.append("g").selectAll("text")
+            .data(force.nodes())
+            .enter().append("text")
+            .attr("x", 8)
+            .attr("y", ".31em")
+            .text(function (d) {
+                return d.name;
+            });
+
+        function tick() {
+            path.attr("d", linkArc);
+            circle.attr("transform", transform);
+            text.attr("transform", transform);
+        }
+
+        function linkArc(d) {
+            var dx = d.target.x - d.source.x,
+                dy = d.target.y - d.source.y,
+                dr = Math.sqrt(dx * dx + dy * dy);
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
+        }
+
+        function transform(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        }
+    }
+</script>
+</body>
+</html>
