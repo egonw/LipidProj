@@ -3,6 +3,8 @@
     <title>Cardiolipin synthase</title>
     <meta http-equiv="Content-Type" content=text/html; charset="UTF-8">
 
+
+    <!-- BASIC INFORMATION FOR D3 code: directional force layout-->
     <style>
 
         .link {
@@ -29,16 +31,17 @@
          MIT license
     -->
 
-    <!-- ops.js -->
+    <!-- Libraries used in the code -->
     <script type="text/javascript" src="https://egonw.github.io/pils/lib/purl.js"></script>
     <script type="text/javascript" src="https://egonw.github.io/pils/lib/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="https://egonw.github.io/pils/lib/d3.v3.min.js"></script>
     <script type="text/javascript" src="https://egonw.github.io/pils/src/combined.js"></script>
-    <!--  <link rel="stylesheet" href="Proj1CSS.css"/>  -->
+
 </head>
 
 <body>
 
+<!-- List with information obtained from API call -->
 <div class="chart"></div>
 <h2>Diseases related to target: Cardiolipin synthase</h2>
 <h3>Disease: name ➜ disease URI ➜ gene URI ➜ protein URI  </h3>
@@ -49,34 +52,41 @@
 
 
 <h4>JSON</h4>
+<!-- Raw text with all that was received from the API call -->
 <div id="json">Pending...</div>
 
 
-<!-- dynamically create a table with type information -->
 <script type="text/javascript">
 
     links = [];
 
+    //intialise linkObj that will be used in the d3 code
     function linkObj (source,target,value) {
         this.source = source;
         this.target = target;
         this.value = value;
     }
 
+    //variable needed to print the visualiation
     var printGraph = false;
+    
+    //both numCallsAssociation and numCallsTarget are used so that the links are only pushed once all info has been retrieved from the API call
     var numCallsAssociation = 0;
     var numCallsTarget = 0;
 
-    var diseaseService = new DiseaseSearch(  //DiseaseSearch comes from ops.js library (OpenPhacts Library)
+    
+    //DiseaseSearch comes from ops.js library (OpenPhacts Library)
+    var diseaseService = new DiseaseSearch(  
         "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
     );
 
 
-    function handleTargets(success, status, targetData)
-    { //pathwayData :: handlePathways related to these links (request call back)--> http://openphacts.github.io/ops.js/PathwaySearch.html  &&    http://openphacts.github.io/ops.js/global.html#requestCallback
+    //3. Function that gives all genes related to disease found in function handleAssociation
+    function handleTargets(success, status, targetData) 
+    { 
 
         if (success && status == 200 || status == 500) {
-            // d3.select("#json").html("<pre>" + JSON.stringify(targetData, undefined, 2) + "</pre>");
+            d3.select("#json").html("<pre>" + JSON.stringify(targetData, undefined, 2) + "</pre>");
 
 
             var itemCount = targetData.items.length;
@@ -113,6 +123,7 @@
 
         numCallsTarget++;
 
+        //Once all information has been retrieved, print the visualisation
         if(numCallsTarget == numCallsAssociation && !printGraph) {
             printGraph = true;
             makeGraph(links);
@@ -121,6 +132,7 @@
 
 
 
+    //2. function that gives the names of the diseases related to the URI given in diseaseService.diseasesByTarget
     function handleAssociations(success, status, associationData)
     {
         var itemCount = associationData.items.length;
@@ -149,10 +161,13 @@
         }
     };
 
+    
+    //1. First call that starts running the programme 
     var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
-
     diseaseService.diseasesByTarget(URI, null, 10, null, null, handleAssociations);
 
+    
+    //D3 code
     function makeGraph(links){
 
         var nodes = {};
