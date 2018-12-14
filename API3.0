@@ -43,12 +43,14 @@
 
 <!-- List with information obtained from API call -->
 <div class="chart"></div>
-<h2>Diseases related to target: Cardiolipin synthase</h2>
+<h2>Diseases related to target</h2>
+<input type="text" id="bleh" />
 <h3>Disease: name ➜ disease URI ➜ gene URI ➜ protein URI  </h3>
 <ul id="list1"></ul>
 <h3>Further info about diseases listed above ➜ </h3>
 <h4>Disease name ➜ gene related (URI) </h4>
 <ul id="list2"></ul>
+
 
 
 <h4>JSON</h4>
@@ -69,21 +71,21 @@
 
     //variable needed to print the visualiation
     var printGraph = false;
-    
+
     //both numCallsAssociation and numCallsTarget are used so that the links are only pushed once all info has been retrieved from the API call
     var numCallsAssociation = 0;
     var numCallsTarget = 0;
 
-    
+
     //DiseaseSearch comes from ops.js library (OpenPhacts Library)
-    var diseaseService = new DiseaseSearch(  
+    var diseaseService = new DiseaseSearch(
         "https://beta.openphacts.org/2.1", "fa822525", "b961781eab7d091dd86edc431a923c4f"
     );
 
 
     //3. Function that gives all genes related to disease found in function handleAssociation
-    function handleTargets(success, status, targetData) 
-    { 
+    function handleTargets(success, status, targetData)
+    {
 
         if (success && status == 200 || status == 500) {
             d3.select("#json").html("<pre>" + JSON.stringify(targetData, undefined, 2) + "</pre>");
@@ -161,12 +163,24 @@
         }
     };
 
-    
-    //1. First call that starts running the programme 
-    var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
-    diseaseService.diseasesByTarget(URI, null, 10, null, null, handleAssociations);
 
-    
+    //1. First call that starts running the programme
+    var URI = "http://purl.uniprot.org/uniprot/Q9UJA2";
+    var inputElement = document.getElementById('bleh');
+    var theirInput = '';
+    inputElement.addEventListener('change', function(e) {
+        theirInput = e.target.value;
+
+        try{
+            diseaseService.diseasesByTarget(theirInput, null, 10, null, null, handleAssociations);
+        } catch(err){
+            message.innerHTML = "Error: " + err + ".";
+        }
+
+    });
+
+
+
     //D3 code
     function makeGraph(links){
 
